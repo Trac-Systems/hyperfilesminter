@@ -1,17 +1,58 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { getStorePath } from './src/functions.js';
 import { App } from './src/app.js';
 import FileExchangeProtocol from "./contract/FileExchangeProtocol.js";
 import FileExchangeContract from "./contract/FileExchangeContract.js";
+// import FileExplorerProtocol from "./contract/FileExplorerProtocol.js"; //
 import Migration from "./features/migration/index.js";
-
 
 export * from 'trac-peer/src/functions.js';
 
-const RECEIPTS_DIR = path.join(Pear.config.dir, 'receipts'); 
-if (!fs.existsSync(RECEIPTS_DIR)) { 
-    fs.mkdirSync(RECEIPTS_DIR, { recursive: true });
+function getSafePearConfigDir() {
+    // Intentar obtener Pear.config.dir, con fallback para Linux
+    if (typeof Pear !== 'undefined' && Pear.config && Pear.config.dir) {
+        return Pear.config.dir;
+    }
+    
+    // Fallback para cuando Pear.config.dir no está disponible (común en Linux)
+    const storePath = getStorePath();
+    return storePath;
+}
+
+const RECEIPTS_DIR = path.join(getSafePearConfigDir(), 'receipts');
+
+try {
+    if (!fs.existsSync(RECEIPTS_DIR)) { 
+        fs.mkdirSync(RECEIPTS_DIR, { recursive: true });
+        
+        // En Linux, establecer permisos apropiados
+        if (process.platform === 'linux' || process.platform === 'darwin') {
+            try {
+                fs.chmodSync(RECEIPTS_DIR, 0o755);
+            } catch (chmodError) {
+                console.warn('Could not set directory permissions:', chmodError.message);
+            }
+        }
+    }
+} catch (error) {
+    console.error('Error creating receipts directory:', error.message);
+    console.error('Attempting to create in alternative location...');
+    
+    const fallbackReceiptsDir = path.join(os.homedir(), '.hypertokens-cli', 'receipts');
+    try {
+        fs.mkdirSync(fallbackReceiptsDir, { recursive: true });
+        console.log('Created receipts directory in:', fallbackReceiptsDir);
+        // Actualizar la variable global
+        Object.defineProperty(globalThis, 'RECEIPTS_DIR', {
+            value: fallbackReceiptsDir,
+            writable: false
+        });
+    } catch (fallbackError) {
+        console.error('Failed to create fallback receipts directory:', fallbackError.message);
+        process.exit(1);
+    }
 }
 
 console.log('Storage path:', getStorePath());
@@ -25,34 +66,109 @@ const msb_opts = {
 
 const peer_opts = {
     protocol: FileExchangeProtocol,
+    // protocol: FileExplorerProtocol, //
     contract: FileExchangeContract,
     bootstrap: '7863cfc321cd1374a5da1945677bd1e99a8623dca1247703a78d1e59ec0fc173',
     channel: '0000000000000000000000100fracpnk',
     store_name: getStorePath() + '/file-exchange-db',
     enable_logs: true,
     enable_txlogs: true,
-    receipts_path: RECEIPTS_DIR
+    receipts_path: globalThis.RECEIPTS_DIR || RECEIPTS_DIR
 };
 
 const old_path = getStorePath() + "/trac20_2";
 const new_path = peer_opts.store_name;
-if (false === fs.existsSync(new_path + '/db') && true === fs.existsSync(old_path + '/db/keypair.json')) {
-    fs.mkdirSync(new_path, { recursive: true });
-    fs.mkdirSync(new_path + '/db', { recursive: true });
-    fs.copyFileSync(old_path + '/db/keypair.json', new_path + '/db/keypair.json');
-    fs.rmSync(old_path, { recursive: true, force: true });
+
+try {
+    const newDbPath = new_path + '/db';
+    const oldKeypairPath = old_path + '/db/keypair.json';
+    const newKeypairPath = newDbPath + '/keypair.json';
+    
+    const needsMigration = !fs.existsSync(newDbPath) && fs.existsSync(oldKeypairPath);
+    
+    if (needsMigration) {
+        console.log('Starting database migration...');
+        
+        // Crear directorios con permisos apropiados
+        if (!fs.existsSync(new_path)) {
+            fs.mkdirSync(new_path, { recursive: true });
+            if (process.platform === 'linux' || process.platform === 'darwin') {
+                fs.chmodSync(new_path, 0o755);
+            }
+        }
+        
+        if (!fs.existsSync(newDbPath)) {
+            fs.mkdirSync(newDbPath, { recursive: true });
+            if (process.platform === 'linux' || process.platform === 'darwin') {
+                fs.chmodSync(newDbPath, 0o755);
+            }
+        }
+        
+        fs.copyFileSync(oldKeypairPath, newKeypairPath);
+        
+        // Establecer permisos restrictivos para el keypair en sistemas Unix
+        if (process.platform === 'linux' || process.platform === 'darwin') {
+            try {
+                fs.chmodSync(newKeypairPath, 0o600); // Solo lectura/escritura para el propietario
+            } catch (chmodError) {
+                console.warn('Could not set keypair permissions:', chmodError.message);
+            }
+        }
+        
+        try {
+            fs.rmSync(old_path, { recursive: true, force: true });
+            console.log('Database migration completed successfully.');
+        } catch (rmError) {
+            console.warn('Could not remove old directory:', rmError.message);
+            console.warn('You may want to manually remove:', old_path);
+        }
+    }
+} catch (migrationError) {
+    console.error('Error during database migration:', migrationError.message);
+    console.error('Continuing with application startup...');
+    
+    try {
+        const newDbPath = new_path + '/db';
+        if (!fs.existsSync(newDbPath)) {
+            fs.mkdirSync(newDbPath, { recursive: true });
+            if (process.platform === 'linux' || process.platform === 'darwin') {
+                fs.chmodSync(newDbPath, 0o755);
+            }
+        }
+    } catch (dirError) {
+        console.error('Critical error: Could not create database directory:', dirError.message);
+        process.exit(1);
+    }
 }
 
 export const app = new App(msb_opts, peer_opts, [
     { name: 'migration', class: Migration }
 ]);
 
-await app.start();
-
-console.log("trac-peer node started successfully.");
-console.log("Minter/Owner Address:", app.peer.wallet.publicKey);
-console.log("\nNode is running in interactive mode.");
-console.log("Type '/commands' to see available file exchange options.");
-console.log("========================================================\n");
-
-
+try {
+    await app.start();
+    
+    console.log("trac-peer node started successfully.");
+    console.log("Minter/Owner Address:", app.peer.wallet.publicKey);
+    console.log("\nNode is running in interactive mode.");
+    console.log("Type '/commands' to see available file exchange options.");
+    console.log("========================================================\n");
+    
+} catch (startError) {
+    console.error('Error starting application:', startError.message);
+    console.error('Stack trace:', startError.stack);
+    
+    // Información de diagnóstico adicional para Linux
+    if (process.platform === 'linux') {
+        console.error('\nLinux diagnostic information:');
+        console.error('- Current user:', os.userInfo().username);
+        console.error('- Home directory:', os.homedir());
+        console.error('- Storage path exists:', fs.existsSync(getStorePath()));
+        console.error('- Receipts path exists:', fs.existsSync(globalThis.RECEIPTS_DIR || RECEIPTS_DIR));
+        console.error('- Node.js version:', process.version);
+        console.error('- Platform:', process.platform);
+        console.error('- Architecture:', process.arch);
+    }
+    
+    process.exit(1);
+}
