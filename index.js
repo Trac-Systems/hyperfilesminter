@@ -5,18 +5,18 @@ import { getStorePath } from './src/functions.js';
 import { App } from './src/app.js';
 import FileExchangeProtocol from "./contract/FileExchangeProtocol.js";
 import FileExchangeContract from "./contract/FileExchangeContract.js";
-// import FileExplorerProtocol from "./contract/FileExplorerProtocol.js"; //
+
 import Migration from "./features/migration/index.js";
 
 export * from 'trac-peer/src/functions.js';
 
 function getSafePearConfigDir() {
-    // Intentar obtener Pear.config.dir, con fallback para Linux
+    
     if (typeof Pear !== 'undefined' && Pear.config && Pear.config.dir) {
         return Pear.config.dir;
     }
     
-    // Fallback para cuando Pear.config.dir no está disponible (común en Linux)
+    
     const storePath = getStorePath();
     return storePath;
 }
@@ -27,7 +27,7 @@ try {
     if (!fs.existsSync(RECEIPTS_DIR)) { 
         fs.mkdirSync(RECEIPTS_DIR, { recursive: true });
         
-        // En Linux, establecer permisos apropiados
+        
         if (process.platform === 'linux' || process.platform === 'darwin') {
             try {
                 fs.chmodSync(RECEIPTS_DIR, 0o755);
@@ -44,7 +44,7 @@ try {
     try {
         fs.mkdirSync(fallbackReceiptsDir, { recursive: true });
         console.log('Created receipts directory in:', fallbackReceiptsDir);
-        // Actualizar la variable global
+        
         Object.defineProperty(globalThis, 'RECEIPTS_DIR', {
             value: fallbackReceiptsDir,
             writable: false
@@ -66,7 +66,7 @@ const msb_opts = {
 
 const peer_opts = {
     protocol: FileExchangeProtocol,
-    // protocol: FileExplorerProtocol, //
+    
     contract: FileExchangeContract,
     bootstrap: '7863cfc321cd1374a5da1945677bd1e99a8623dca1247703a78d1e59ec0fc173',
     channel: '0000000000000000000000100fracpnk',
@@ -89,7 +89,7 @@ try {
     if (needsMigration) {
         console.log('Starting database migration...');
         
-        // Crear directorios con permisos apropiados
+        
         if (!fs.existsSync(new_path)) {
             fs.mkdirSync(new_path, { recursive: true });
             if (process.platform === 'linux' || process.platform === 'darwin') {
@@ -106,10 +106,10 @@ try {
         
         fs.copyFileSync(oldKeypairPath, newKeypairPath);
         
-        // Establecer permisos restrictivos para el keypair en sistemas Unix
+        
         if (process.platform === 'linux' || process.platform === 'darwin') {
             try {
-                fs.chmodSync(newKeypairPath, 0o600); // Solo lectura/escritura para el propietario
+                fs.chmodSync(newKeypairPath, 0o600); 
             } catch (chmodError) {
                 console.warn('Could not set keypair permissions:', chmodError.message);
             }
@@ -158,7 +158,7 @@ try {
     console.error('Error starting application:', startError.message);
     console.error('Stack trace:', startError.stack);
     
-    // Información de diagnóstico adicional para Linux
+    
     if (process.platform === 'linux') {
         console.error('\nLinux diagnostic information:');
         console.error('- Current user:', os.userInfo().username);
