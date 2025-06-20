@@ -42,18 +42,16 @@ class FileExchangeContract extends Contract {
         this.messageHandler(async function() {});
     }
 
-    // =================================================================
-    // MÉTODO DE EJECUCIÓN FINAL Y ROBUSTO
-    // =================================================================
+    
 
     async execute(op, batch) {
-        // Conectar la instancia del contrato a la base de datos
+        
         this.storage = batch;
 
         const dispatch = op.value?.dispatch;
         const signer = op.value?.ipk;
 
-        // Ignorar bloques que no tienen la estructura de una transacción de usuario
+        
         if (!dispatch || !signer) {
             return;
         }
@@ -61,24 +59,24 @@ class FileExchangeContract extends Contract {
         const operation = dispatch.type;
         const value = dispatch.value;
         
-        // Lista de operaciones que este contrato sabe manejar
+        
         const knownOps = ['init_file_upload', 'upload_file_chunk', 'transfer_file'];
 
-        // Si la operación es una de las nuestras, la ejecutamos.
-        // Si no (ej: tipo 'p'), la ignoramos y no hacemos nada.
+        
+        
         if (knownOps.includes(operation)) {
-            // Establecer el contexto para la llamada
+            
             this.address = signer;
             this.value = value;
             
-            // Llamar dinámicamente al método correspondiente (ej: this.init_file_upload())
+            
             return await this[operation]();
         }
     }
 
-    // =================================================================
-    // MÉTODOS ESPECÍFICOS (CON INDEXACIÓN FUNCIONAL)
-    // =================================================================
+    
+    
+    
 
     async init_file_upload() {
         const { file_id, filename, mime_type, total_chunks, file_hash } = this.value;
@@ -87,7 +85,7 @@ class FileExchangeContract extends Contract {
         const existing_metadata = await this.get(storage_key);
 
         if (existing_metadata !== null) {
-            return; // Operación idempotente
+            return; 
         }
 
         const metadata_object = { filename, mime_type, total_chunks, file_hash, owner: this.address };
