@@ -64,7 +64,7 @@ const peer_opts = {
     contract: FileExchangeContract,
     bootstrap: '36fe3fd83c25cbc9759b3f191c8825f9028f1d57fc01c825a9868e3b11f929f0',
     channel: '0000000000000000000000101fracpnk',
-    store_name: getStorePath() + '/file-exchange-db', // Este es el destino final de la keypair
+    store_name: getStorePath() + '/file-exchange-db',
     enable_logs: true,
     enable_txlogs: true,
     receipts_path: globalThis.RECEIPTS_DIR || RECEIPTS_DIR
@@ -74,8 +74,8 @@ const old_path_v1 = getStorePath() + "/trac20";
 const new_path_v1 = peer_opts.store_name;
 if (false === fs.existsSync(new_path_v1 + '/db') &&
     true === fs.existsSync(old_path_v1 + '/db/keypair.json')) {
-    fs.mkdirSync(new_path_v1, { recursive: true }); // Asegura que el directorio destino exista
-    fs.mkdirSync(new_path_v1 + '/db', { recursive: true }); // Asegura que el directorio /db destino exista
+    fs.mkdirSync(new_path_v1, { recursive: true });
+    fs.mkdirSync(new_path_v1 + '/db', { recursive: true });
     fs.copyFileSync(old_path_v1 + '/db/keypair.json', new_path_v1 + '/db/keypair.json');
     fs.rmSync(old_path_v1, { recursive: true, force: true });
     console.log(`Migrated keypair from ${old_path_v1} to ${new_path_v1}`);
@@ -85,8 +85,8 @@ const old_path_v2 = getStorePath() + "/trac20_2";
 const new_path_v2 = peer_opts.store_name;
 if (false === fs.existsSync(new_path_v2 + '/db') &&
     true === fs.existsSync(old_path_v2 + '/db/keypair.json')) {
-    fs.mkdirSync(new_path_v2, { recursive: true }); // Asegura que el directorio destino exista
-    fs.mkdirSync(new_path_v2 + '/db', { recursive: true }); // Asegura que el directorio /db destino exista
+    fs.mkdirSync(new_path_v2, { recursive: true });
+    fs.mkdirSync(new_path_v2 + '/db', { recursive: true });
     fs.copyFileSync(old_path_v2 + '/db/keypair.json', new_path_v2 + '/db/keypair.json');
     fs.rmSync(old_path_v2, { recursive: true, force: true });
     console.log(`Migrated keypair from ${old_path_v2} to ${new_path_v2}`);
