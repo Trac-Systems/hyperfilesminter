@@ -3,10 +3,11 @@ import path from 'path';
 import os from 'os';
 import { getStorePath } from './src/functions.js';
 import { App } from './src/app.js';
-import FileExchangeProtocol from "./contract/FileExchangeProtocol.js";
+import FileExchangeProtocol from "./contract/FileExchangeProtocol.js"; //
 import FileExchangeContract from "./contract/FileExchangeContract.js";
 
 import Migration from "./features/migration/index.js";
+import readline from 'readline'; // <-- Añade esta importación
 
 export * from 'trac-peer/src/functions.js';
 
@@ -23,13 +24,15 @@ const RECEIPTS_DIR = path.join(getSafePearConfigDir(), 'receipts');
 try {
     if (!fs.existsSync(RECEIPTS_DIR)) {
         fs.mkdirSync(RECEIPTS_DIR, { recursive: true });
-        if (process.platform === 'linux' || process.platform === 'darwin') {
+        // INICIO DE MODIFICACIÓN: Añade la verificación 'typeof process !== "undefined"'
+        if (typeof process !== "undefined" && (process.platform === 'linux' || process.platform === 'darwin')) {
             try {
                 fs.chmodSync(RECEIPTS_DIR, 0o755);
             } catch (chmodError) {
                 console.warn('Could not set directory permissions:', chmodError.message);
             }
         }
+        
     }
 } catch (error) {
     console.error('Error creating receipts directory:', error.message);
@@ -46,7 +49,11 @@ try {
         });
     } catch (fallbackError) {
         console.error('Failed to create fallback receipts directory:', fallbackError.message);
-        process.exit(1);
+        if (typeof process !== "undefined") {
+            process.exit(1);
+        } else {
+            console.error('No se pudo salir del proceso, "process" no definido. Por favor, cierre manualmente.');
+        }
     }
 }
 
@@ -64,7 +71,7 @@ const peer_opts = {
     contract: FileExchangeContract,
     bootstrap: '36fe3fd83c25cbc9759b3f191c8825f9028f1d57fc01c825a9868e3b11f929f0',
     channel: '0000000000000000000000101fracpnk',
-    store_name: getStorePath() + '/file-exchange-db',
+    store_name: getStorePath() + '/file-exchange-db', // Este es el destino final de la keypair
     enable_logs: true,
     enable_txlogs: true,
     receipts_path: globalThis.RECEIPTS_DIR || RECEIPTS_DIR
@@ -92,11 +99,47 @@ if (false === fs.existsSync(new_path_v2 + '/db') &&
     console.log(`Migrated keypair from ${old_path_v2} to ${new_path_v2}`);
 }
 
-// =================================================================
 
 export const app = new App(msb_opts, peer_opts, [
     { name: 'migration', class: Migration }
 ]);
+
+let rl; // Declara rl aquí para que sea accesible en shutdown
+let isShuttingDown = false; // Add this flag to prevent multiple shutdown calls
+
+async function shutdown() {
+    console.log('Iniciando apagado limpio...');
+
+    // Cierra la interfaz readline si está abierta
+    if (rl) {
+        rl.close();
+        if (typeof process !== "undefined" && process.stdin && process.stdin.isPaused()) {
+            process.stdin.resume();
+        }
+    }
+
+    console.log('Deteniendo nodo trac-peer...');
+    try {
+        if (app && app.peer && typeof app.peer.stop === 'function') {
+            await app.peer.stop();
+            console.log('Nodo trac-peer detenido.');
+        } else if (app && typeof app.stop === 'function') {
+            await app.stop();
+            console.log('Aplicación trac-peer detenida.');
+        } else {
+            console.warn('No se encontró instancia de trac-peer o método stop para detener.');
+        }
+    } catch (stopError) {
+        console.error('Error al detener trac-peer:', stopError.message);
+    }
+
+    console.log('Saliendo del proceso Node.js.');
+    if (typeof process !== "undefined") {
+        process.exit(0); // Sale del proceso con éxito
+    } else {
+        console.log('Running in Pear environment - manual shutdown required.');
+    }
+}
 
 try {
     await app.start();
@@ -107,11 +150,29 @@ try {
     console.log("Type '/commands' to see available file exchange options.");
     console.log("========================================================\n");
 
+    if (typeof process !== "undefined") {
+        // Configurar la lectura de la entrada estándar para el comando /exit
+        rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        rl.on('line', async (input) => {
+            if (input.trim().toLowerCase() === '/exit') {
+                console.log('Detectado comando /exit. Iniciando apagado...');
+                await shutdown(); // Llama a la función de apagado
+            }
+        });
+        console.log("Escribe '/exit' para apagar el nodo.");
+    } else {
+        console.log("Running in Pear environment - use Pear controls to exit.");
+    }
+
 } catch (startError) {
     console.error('Error starting application:', startError.message);
     console.error('Stack trace:', startError.stack);
 
-    if (process.platform === 'linux') {
+    if (typeof process !== "undefined" && process.platform === 'linux') {
         console.error('\nLinux diagnostic information:');
         console.error('- Current user:', os.userInfo().username);
         console.error('- Home directory:', os.homedir());
@@ -121,5 +182,37 @@ try {
         console.error('- Platform:', process.platform);
         console.error('- Architecture:', process.arch);
     }
-    process.exit(1);
+    if (typeof process !== "undefined") {
+        process.exit(1);
+    } else {
+        console.error('No se pudo salir del proceso, "process" no definido. Por favor, cierre manualmente.');
+    }
+}
+
+// Only set up process event handlers if process is available
+if (typeof process !== "undefined") {
+    process.on('SIGINT', async () => {
+        if (isShuttingDown) return; // Evita ejecuciones múltiples
+        isShuttingDown = true;
+        console.log('\nSeñal SIGINT (Control+C) recibida. Iniciando apagado limpio...');
+        await shutdown();
+    });
+
+    process.on('SIGTERM', async () => {
+        if (isShuttingDown) return;
+        isShuttingDown = true;
+        console.log('\nSeñal SIGTERM recibida. Iniciando apagado limpio...');
+        await shutdown();
+    });
+
+    process.on('unhandledRejection', (reason, promise) => {
+        console.error('ERROR CRÍTICO: Promesa no manejada:', reason);
+        shutdown(); // Intenta un apagado limpio
+    });
+
+    process.on('uncaughtException', (err) => {
+        console.error('ERROR CRÍTICO: Excepción no capturada:', err);
+        shutdown(); 
+        setTimeout(() => process.exit(1), 1000);
+    });
 }
