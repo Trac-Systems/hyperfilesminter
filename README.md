@@ -4,6 +4,10 @@ A P2P CLI tool for minting and transferring files as unique assets using trac-pe
 
 ### Prerequisites
 
+
+visit
+https://fracpnk.xyz/                the firs collection in TRK network
+
 - Node.js
 - Pear
 
