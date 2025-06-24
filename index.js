@@ -7,7 +7,7 @@ import FileExplorerProtocol from "./contract/FileExplorerProtocol.js"; //
 import FileExchangeContract from "./contract/FileExchangeContract.js";
 
 import Migration from "./features/migration/index.js";
-import readline from 'readline'; // <-- Añade esta importación
+import readline from 'readline'; 
 
 export * from 'trac-peer/src/functions.js';
 
