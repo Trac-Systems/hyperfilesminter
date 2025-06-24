@@ -5,7 +5,7 @@ import path from 'path';
 class FileExchangeProtocol extends Protocol{
     constructor(peer, base, options = {}) {
         super(peer, base, options);
-        // Guardamos la ruta del directorio de recibos que pasamos desde index.js
+        
         this.receipts_path = options.receipts_path; 
         if (!this.receipts_path) {
             console.warn('[PROTOCOL] Warning: Receipts path not configured. JSON receipts will not be generated.');
@@ -84,8 +84,7 @@ class FileExchangeProtocol extends Protocol{
 
         const chunkSize = 768;
         for (let i = 0; i < totalChunks; i++) {
-            // Se reemplaza el incompatible process.stdout.write por console.log.
-            // Esto imprimirá cada chunk en una nueva línea, pero funcionará en Pear.
+            
             console.log(`[+] Uploading chunk ${i + 1} of ${totalChunks}...`);
 
             const chunkData = fileBuffer.toString('base64', i * chunkSize, (i + 1) * chunkSize);
@@ -99,7 +98,7 @@ class FileExchangeProtocol extends Protocol{
 
         console.log(`\n=== SUCCESS! File ${filename} (ID: ${file_id}) has been minted. ===`);
 
-        // Lógica para crear el recibo JSON
+        
         if (this.receipts_path) {
             const receiptPath = path.join(this.receipts_path, `${file_id}.json`);
             const receiptData = {
