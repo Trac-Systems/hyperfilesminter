@@ -5,7 +5,7 @@ import path from 'path';
 class FileExchangeProtocol extends Protocol{
     constructor(peer, base, options = {}) {
         super(peer, base, options);
-        // Guardamos la ruta del directorio de recibos que pasamos desde index.js
+        
         this.receipts_path = options.receipts_path; 
         if (!this.receipts_path) {
             console.warn('[PROTOCOL] Warning: Receipts path not configured. JSON receipts will not be generated.');
@@ -85,8 +85,7 @@ class FileExchangeProtocol extends Protocol{
 
         const chunkSize = 768;
         for (let i = 0; i < totalChunks; i++) {
-            // Se reemplaza el incompatible process.stdout.write por console.log.
-            // Esto imprimirá cada chunk en una nueva línea, pero funcionará en Pear.
+            
             console.log(`[+] Uploading chunk ${i + 1} of ${totalChunks}...`);
 
             const chunkData = fileBuffer.toString('base64', i * chunkSize, (i + 1) * chunkSize);
@@ -100,7 +99,7 @@ class FileExchangeProtocol extends Protocol{
 
         console.log(`\n=== SUCCESS! File ${filename} (ID: ${file_id}) has been minted. ===`);
 
-        // Lógica para crear el recibo JSON
+        
         if (this.receipts_path) {
             const receiptPath = path.join(this.receipts_path, `${file_id}.json`);
             const receiptData = {
@@ -144,11 +143,11 @@ class FileExchangeProtocol extends Protocol{
         await this._transact(command, {});
     }
 
-    // --- NUEVA FUNCIÓN DE DESCARGA ---
+    
     async downloadSingleFile(file_id, destination_path) {
         console.log(`\n--- Starting download for file ID: ${file_id} ---`);
 
-        // 1. Asegurarse de que el estado local esté actualizado
+        
         await this.peer.base.update();
 
         // 2. Obtener los metadatos del archivo
@@ -162,7 +161,7 @@ class FileExchangeProtocol extends Protocol{
         const { filename, total_chunks } = metadata;
         console.log(`--- File found: ${filename}. Total chunks to download: ${total_chunks} ---`);
 
-        // 3. Descargar cada chunk en orden
+        
         const chunks = [];
         for (let i = 0; i < total_chunks; i++) {
             console.log(`[+] Downloading chunk ${i + 1} of ${total_chunks}...`);
@@ -173,18 +172,17 @@ class FileExchangeProtocol extends Protocol{
                 throw new Error(`[PROTOCOL] Critical error: Chunk ${i} for file ${file_id} is missing. Download aborted.`);
             }
 
-            // Los chunks se guardaron en Base64, hay que decodificarlos a Buffer
+            
             const chunkBuffer = Buffer.from(chunkDataB64, 'base64');
             chunks.push(chunkBuffer);
         }
         
         console.log('--- Chunk download complete. Reassembling file... ---');
 
-        // 4. Unir los chunks en un solo Buffer
+        
         const fileBuffer = Buffer.concat(chunks);
 
-        // 5. Guardar el archivo en la ruta de destino
-        // Primero, asegurarse de que el directorio de destino existe.
+        
         await fs.mkdir(destination_path, { recursive: true });
         const finalFilePath = path.join(destination_path, filename);
         
@@ -252,7 +250,7 @@ class FileExchangeProtocol extends Protocol{
                     console.error(`\n!!! TRANSFER FAILED: ${transferError.message} !!!`);
                     await this.updateReceiptOnTransfer(args.file_id, args.to, 'failed', transferError.message);
                 }
-            // --- NUEVO COMANDO DE DESCARGA ---
+            
             } else if (input.startsWith("/download_file")) {
                 const args = this.parseArgs(input);
                 if (!args.file_id) throw new Error("Please specify a file ID using --file_id");
