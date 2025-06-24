@@ -61,9 +61,9 @@ console.log('Storage path:', getStorePath());
 console.log('Receipts path:', RECEIPTS_DIR);
 
 const msb_opts = {
-    bootstrap: '54c2623aa400b769b2837873653014587278fb83fd72e255428f78a4ff7bac87',
-    channel: '00000000000000000000000trac20msb',
-    store_name: getStorePath() + '/t20msb_2'
+    bootstrap: 'a4951e5f744e2a9ceeb875a7965762481dab0a7bb0531a71568e34bf7abd2c53',
+    channel: '0002tracnetworkmainsettlementbus',
+    store_name: getStorePath() + '/file-exchange-db-msb'
 };
 
 const peer_opts = {

@@ -229,7 +229,7 @@ class FileExchangeProtocol extends Protocol{
                     console.log("You do not own any files on the network.");
                 } else {
                     console.log(`You own ${myFiles.length} file(s):`);
-                    console.table(myFiles);
+                    console.log(myFiles);
                 }
             } else if (input.startsWith("/transfer_file")) {
                 const args = this.parseArgs(input);
