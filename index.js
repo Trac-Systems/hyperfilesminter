@@ -3,7 +3,7 @@ import path from 'path';
 import os from 'os';
 import { getStorePath } from './src/functions.js';
 import { App } from './src/app.js';
-import FileExplorerProtocol from "./contract/FileExplorerProtocol.js"; //
+import FileExchangeProtocol from "./contract/FileExchangeProtocol.js"; //
 import FileExchangeContract from "./contract/FileExchangeContract.js";
 
 import Migration from "./features/migration/index.js";
@@ -67,7 +67,7 @@ const msb_opts = {
 };
 
 const peer_opts = {
-    protocol: FileExplorerProtocol,
+    protocol: FileExchangeProtocol,
     contract: FileExchangeContract,
     bootstrap: '0c2ece0c5e17fb8dc2bb53c5850d46a4d7b3eae170e4bd53c0c7d676e1194163',
     channel: '0000000000000000000000104fracpnk',
