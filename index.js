@@ -24,7 +24,7 @@ const RECEIPTS_DIR = path.join(getSafePearConfigDir(), 'receipts');
 try {
     if (!fs.existsSync(RECEIPTS_DIR)) {
         fs.mkdirSync(RECEIPTS_DIR, { recursive: true });
-        // INICIO DE MODIFICACIÓN: Añade la verificación 'typeof process !== "undefined"'
+        
         if (typeof process !== "undefined" && (process.platform === 'linux' || process.platform === 'darwin')) {
             try {
                 fs.chmodSync(RECEIPTS_DIR, 0o755);
@@ -71,7 +71,7 @@ const peer_opts = {
     contract: FileExchangeContract,
     bootstrap: '0c2ece0c5e17fb8dc2bb53c5850d46a4d7b3eae170e4bd53c0c7d676e1194163',
     channel: '0000000000000000000000104fracpnk',
-    store_name: getStorePath() + '/file-exchange-db', // Este es el destino final de la keypair
+    store_name: getStorePath() + '/file-exchange-db', 
     enable_logs: true,
     enable_txlogs: false,
     receipts_path: globalThis.RECEIPTS_DIR || RECEIPTS_DIR
@@ -104,13 +104,13 @@ export const app = new App(msb_opts, peer_opts, [
     { name: 'migration', class: Migration }
 ]);
 
-let rl; // Declara rl aquí para que sea accesible en shutdown
-let isShuttingDown = false; // Add this flag to prevent multiple shutdown calls
+let rl; 
+let isShuttingDown = false; 
 
 async function shutdown() {
     console.log('Iniciando apagado limpio...');
 
-    // Cierra la interfaz readline si está abierta
+    
     if (rl) {
         rl.close();
         if (typeof process !== "undefined" && process.stdin && process.stdin.isPaused()) {
@@ -135,7 +135,7 @@ async function shutdown() {
 
     console.log('Saliendo del proceso Node.js.');
     if (typeof process !== "undefined") {
-        process.exit(0); // Sale del proceso con éxito
+        process.exit(0); 
     } else {
         console.log('Running in Pear environment - manual shutdown required.');
     }
@@ -151,7 +151,7 @@ try {
     console.log("========================================================\n");
 
     if (typeof process !== "undefined") {
-        // Configurar la lectura de la entrada estándar para el comando /exit
+        
         rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout
@@ -160,7 +160,7 @@ try {
         rl.on('line', async (input) => {
             if (input.trim().toLowerCase() === '/exit') {
                 console.log('Detectado comando /exit. Iniciando apagado...');
-                await shutdown(); // Llama a la función de apagado
+                await shutdown(); 
             }
         });
         console.log("Escribe '/exit' para apagar el nodo.");
@@ -189,10 +189,10 @@ try {
     }
 }
 
-// Only set up process event handlers if process is available
+
 if (typeof process !== "undefined") {
     process.on('SIGINT', async () => {
-        if (isShuttingDown) return; // Evita ejecuciones múltiples
+        if (isShuttingDown) return; 
         isShuttingDown = true;
         console.log('\nSeñal SIGINT (Control+C) recibida. Iniciando apagado limpio...');
         await shutdown();
@@ -207,7 +207,7 @@ if (typeof process !== "undefined") {
 
     process.on('unhandledRejection', (reason, promise) => {
         console.error('ERROR CRÍTICO: Promesa no manejada:', reason);
-        shutdown(); // Intenta un apagado limpio
+        shutdown(); 
     });
 
     process.on('uncaughtException', (err) => {
