@@ -7,31 +7,23 @@ import {Timer} from "./features/timer/index.js";
 
 console.log('Storage path:', getStorePath());
 
-///// MSB SETUP
-// To run this example, you don't need to create your own MSB
-// Instead go with the options as-is. The below bootstrap is an MSB testnet (gasless).
+
 const msb_opts = {};
 msb_opts.bootstrap = '54c2623aa400b769b2837873653014587278fb83fd72e255428f78a4ff7bac87';
 msb_opts.channel = '00000000000000000000000trac20msb';
 msb_opts.store_name = getStorePath() + '/t20msb_2';
 
-///// SAMPLE CONTRACT SETUP
-// The sample contract needs to be deployed first.
-// See the README.md for further information.
+
 const peer_opts = {};
 peer_opts.protocol = FileExchangeProtocol;
 peer_opts.contract = FileExchangeContract;
-peer_opts.bootstrap = '14d0d60f17ef1b1ade2eb1c3378d63f93d0bd0169a3429b534be9da7b05b77d9';
-peer_opts.channel = '0000000000000000000000103fracpnk';
+peer_opts.bootstrap = '0c2ece0c5e17fb8dc2bb53c5850d46a4d7b3eae170e4bd53c0c7d676e1194163';
+peer_opts.channel = '0000000000000000000000104fracpnk';
 peer_opts.store_name = getStorePath() + '/file-exchange-db';
 peer_opts.api_tx_exposed = true;
 peer_opts.api_msg_exposed = true;
 
-///// FEATURES
-// Pass multiple features (aka oracles) to the peer and inject data into
-// your contract. Can also go the other way, depending on how you need it.
-// You may add as many Features as you wish.
-// In /src/app.js, the Features are being executed by the admin (usually the Peer Bootstrap)
+
 const timer_opts = {};
 timer_opts.update_interval = 60_000;
 
