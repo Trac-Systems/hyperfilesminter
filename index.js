@@ -69,8 +69,8 @@ const msb_opts = {
 const peer_opts = {
     protocol: FileExchangeProtocol,
     contract: FileExchangeContract,
-    bootstrap: '0c2ece0c5e17fb8dc2bb53c5850d46a4d7b3eae170e4bd53c0c7d676e1194163',
-    channel: '0000000000000000000000104fracpnk',
+    bootstrap: '2e86100330c1773de379d7dd2a4497d53d3a915bc13eef32ded00aa699185214',
+    channel: '0000000000000000000000105fracpnk',
     store_name: getStorePath() + '/file-exchange-db', 
     enable_logs: true,
     enable_txlogs: false,
